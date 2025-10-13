@@ -2,58 +2,11 @@ import os
 from PIL import Image
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+
 
 image_directory = 'Data/'
-no_tumor_image = os.listdir(image_directory + 'notumor/')
-glioma_image = os.listdir(image_directory + 'glioma/')
-meningioma_image = os.listdir(image_directory + 'meningioma/')
-pituitary_image = os.listdir(image_directory + 'pituitary/')
-import matplotlib.pyplot as plt
-
-# print(len(no_tumor_image))
-
-# for i , image_name in enumerate(no_tumor_image):
-#     if((image_name.split('.')[1] == 'jpg') or (image_name.split('.')[1] == 'jpeg') or (image_name.split('.')[1] == 'bmp') or (image_name.split('.')[1] == 'png') ):
-#         image = cv2.imread(image_directory + 'notumor/' + image_name)
-#         image = Image.fromarray(image , 'RGB')
-#         image = image.resize((224 , 224))
-#         dataset.append(np.array(image))
-#         label.append(0)
-
-
-# for i , image_name in enumerate(glioma_image):
-#     if((image_name.split('.')[1] == 'jpg') or (image_name.split('.')[1] == 'jpeg') or (image_name.split('.')[1] == 'bmp') or (image_name.split('.')[1] == 'png') ):
-#         image = cv2.imread(image_directory + 'glioma/' + image_name)
-#         image = Image.fromarray(image , 'RGB')
-#         image = image.resize((224 , 224))
-#         dataset.append(np.array(image))
-#         label.append(1)
-        
-        
-        
-# for i , image_name in enumerate(meningioma_image):
-#     if((image_name.split('.')[1] == 'jpg') or (image_name.split('.')[1] == 'jpeg') or (image_name.split('.')[1] == 'bmp') or (image_name.split('.')[1] == 'png') ):
-#         image = cv2.imread(image_directory + 'meningioma/' + image_name)
-#         image = Image.fromarray(image , 'RGB')
-#         image = image.resize((224 , 224))
-#         dataset.append(np.array(image))
-#         label.append(2)
-        
-        
-
-# for i , image_name in enumerate(pituitary_image):
-#     if((image_name.split('.')[1] == 'jpg') or (image_name.split('.')[1] == 'jpeg') or (image_name.split('.')[1] == 'bmp') or (image_name.split('.')[1] == 'png') ):
-#         image = cv2.imread(image_directory + 'pituitary/' + image_name)
-#         image = Image.fromarray(image , 'RGB')
-#         image = image.resize((224 , 224))
-#         dataset.append(np.array(image))
-#         label.append(3)
-        
-        
-        
-        
-        
-        
 folders = {
     'notumor': 0,
     'glioma': 1,
@@ -70,17 +23,17 @@ for folder_name, folder_label in folders.items():
         if ext in ['jpg', 'jpeg', 'bmp', 'png']:
             image = cv2.imread(image_directory + folder_name + '/' + image_name) # lit l’image depuis le disque en tableau NumPy
             image = Image.fromarray(image, 'RGB') # convertit ce tableau en objet PIL
-            image = image.resize((224, 224)) # redimensionne facilement l’image
-            dataset.append(np.array(image)) # retransforme en tableau NumPy pour ML
-            label.append(folder_label)
-
-
+            image = image.resize((224, 224)) # Redimensionner les images à une taille fixe 224×224 à l’aide de la bibliothèque OpenCV.
+            dataset.append(np.array(image)) # retransforme en tableau NumPy pour ML 
+            label.append(folder_label) #Chaque image et son label doivent avoir le même indice dans les deux listes.
+            
+#Une fois toutes les images et leurs labels chargés, convertir les listes images et étiquettes en tableaux NumPy pour les rendre exploitables par le modèle CNN.
 dataset = np.array(dataset)
 label = np.array(label)
 
 
 
-
+#Afficher graphiquement le nombre d’images dans chaque classe.
 classes, counts = np.unique(label, return_counts=True) # compter combien d’images pour chaque classe
 class_names = list(folders.keys())
 plt.figure(figsize=(8,5))
@@ -92,6 +45,40 @@ plt.show()
 
 
 
+
+
+# Montrer un échantillon d’images pour chaque classe.
+class_names = list(folders.keys()) # Récupérer les noms des classes dans l’ordre de leur label
+plt.figure(figsize=(10, 6)) # Définir la taille du graphique (1 ligne, 4 colonnes)
+for i, class_name in enumerate(class_names): # Afficher 1 image par classe
+    class_indices = np.where(label == i)[0] # Trouver les indices des images appartenant à cette classe
+    image = dataset[class_indices[0]] # Récupérer l'image correspondante
+    # Créer un sous-graphique
+    plt.subplot(1, len(class_names), i + 1)
+    plt.imshow(image)
+    plt.title(class_name)
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
+
+
+
+
+#Vérifier l’équilibre entre les classes et appliquer un rééquilibrage si nécessaire.
+classes, counts = np.unique(label, return_counts=True)
+inverse_folders = {v: k for k, v in folders.items()}
+for c, count in zip(classes, counts):
+    print(f"Classe {inverse_folders[c]}: {count} images")
+# Classe notumor: 2000 images
+# Classe glioma: 1621 images
+# Classe meningioma: 1645 images
+# Classe pituitary: 1757 images
+
+
+#utilisation de data augmentaion
+
+
+ 
 
 
 
