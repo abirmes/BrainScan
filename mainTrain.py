@@ -65,10 +65,11 @@ plt.show()
 
 
 #Vérifier l’équilibre entre les classes et appliquer un rééquilibrage si nécessaire.
-classes, counts = np.unique(label, return_counts=True)
+# classes, counts = np.unique(label, return_counts=True)
 inverse_folders = {v: k for k, v in folders.items()}
-for c, count in zip(classes, counts):
-    print(f"Classe {inverse_folders[c]}: {count} images")
+# for c, count in zip(classes, counts):
+#     print(f"Classe {inverse_folders[c]}: {count} images")
+
 # Classe notumor: 2000 images
 # Classe glioma: 1621 images
 # Classe meningioma: 1645 images
@@ -76,9 +77,88 @@ for c, count in zip(classes, counts):
 
 
 #utilisation de data augmentaion
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
- 
+
+train_datagen = ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+
+# Calculer le nombre d'images à générer pour chaque classe
+max_count = 2000
+
+augmented_dataset = list(dataset)
+augmented_labels = list(label)
+
+# Pour chaque classe, générer des images augmentées
+for class_label in classes:
+    # Trouver les images de cette classe
+    class_indices = np.where(label == class_label)[0]
+    class_images = dataset[class_indices]
+    current_count = len(class_images)
+    
+    # Calculer combien d'images à générer
+    images_to_generate = max_count - current_count
+    if images_to_generate > 0:
+        generated = 0
+        while generated < images_to_generate:
+            # Choisir une image au hasard dans cette classe
+            random_image = class_images[np.random.randint(0, len(class_images))]
+            
+            # Ajouter une dimension batch (le générateur attend format (batch, height, width, channels))
+            random_image = np.expand_dims(random_image, axis=0)
+            
+            # Générer une image augmentée
+            augmented_image = train_datagen.random_transform(random_image[0])
+            
+            # Ajouter au dataset augmenté
+            augmented_dataset.append(augmented_image)
+            augmented_labels.append(class_label)
+            generated += 1
+
+# Convertir en arrays NumPy
+augmented_dataset = np.array(augmented_dataset)
+augmented_labels = np.array(augmented_labels)
+
+
+classes, counts = np.unique(augmented_labels, return_counts=True) # compter combien d’images pour chaque classe
+class_names = list(folders.keys())
+plt.figure(figsize=(8,5))
+plt.bar(class_names, counts, color='skyblue')
+plt.xlabel('Classes')
+plt.ylabel('Nombre d’images')
+plt.title('Nombre d’images par classe')
+plt.show()
+
+
+x = augmented_dataset/255.0
+y = augmented_labels
+
+from tensorflow.keras.utils import to_categorical
+y = to_categorical(y, num_classes=4)
+
+
+from sklearn.model_selection import train_test_split
+x_train , x_test , y_train , y_test = train_test_split(x , y , test_size=0.2 , random_state=1)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
