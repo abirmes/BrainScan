@@ -4,8 +4,14 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.models import Sequential
 from keras.layers import Conv2D , MaxPooling2D, Activation , Dropout, Flatten , Dense
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.optimizers import Adam
+
 
 image_directory = 'Data/'
 folders = {
@@ -78,7 +84,6 @@ inverse_folders = {v: k for k, v in folders.items()}
 
 
 #utilisation de data augmentaion
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 
@@ -134,7 +139,6 @@ plt.show()
 x = augmented_dataset/255.0 # normalisation
 y = augmented_labels
 
-from tensorflow.keras.utils import to_categorical
 y = to_categorical(y, num_classes=4) # to_categorical 
 
 
@@ -147,11 +151,11 @@ x_train , x_test , y_train , y_test = train_test_split(x , y , test_size=0.2 , r
 
 model = Sequential()
 #couvhe 1
-model.add(Conv2D(32 , (3 ,3) , input_shape = (224 , 224 ,3)))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(32 , (3 ,3) , input_shape = (224 , 224 ,3))) #Extrait des caractéristiques locales (bords, textures)
+model.add(MaxPooling2D(pool_size=(2,2))) # Réduit la taille de l’image en gardant l’information essentielle
 
 # couvhe 2
-model.add(Conv2D(64 , (3 ,3) , activation='relu'))
+model.add(Conv2D(64 , (3 ,3) , activation='relu')) # activation function Rend le modèle non linéaire (il peut apprendre des choses plus complexes)
 model.add(MaxPooling2D(pool_size=(2,2)))
 
 #couvhe 3
@@ -168,16 +172,69 @@ model.add(Dropout(0.5))
 # dense Combine toutes les caractéristiques pour faire une prédiction finale
 model.add(Dense(4, activation='softmax')) # 4 classes
 
-model.summary()
-
-
+optimizer = Adam(learning_rate=0.01)
 model.compile(
-    optimizer='adam', # méthode d’apprentissage
+    optimizer=optimizer, # méthode d’apprentissage
     loss='categorical_crossentropy', # mesure l’erreur
     metrics=['accuracy'] # affiche la précision
 )
 
+model.summary()
+plot_model(model, to_file='cnn_architecture.png', show_shapes=True, show_layer_names=True)
 
+
+
+batch_size = 64
+epochs = 35
+
+
+
+
+
+early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+checkpoint = ModelCheckpoint('best_model.h5', monitor='val_loss', save_best_only=True, mode='max')
+
+import time
+start_time = time.time()
+
+history = model.fit(
+    x_train, y_train,
+    epochs=epochs,
+    batch_size=batch_size,
+    validation_data=(x_test, y_test),
+    callbacks=[early_stop , checkpoint]
+)
+end_time = time.time()  # Fin de l'entraînement
+training_time = end_time - start_time
+print("training time: " , training_time)
+
+
+
+# evaluation de modele 
+test_loss, test_acc = model.evaluate(x_test, y_test)
+print("Test Accuracy:", test_acc)
+print("Test Loss:", test_loss)
+
+
+
+#visualisation graphique 
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['accuracy'], label='train acc')
+plt.plot(history.history['val_accuracy'], label='val acc')
+plt.title('Accuracy au fil des époques')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['loss'], label='train loss')
+plt.plot(history.history['val_loss'], label='val loss')
+plt.title('Loss au fil des époques')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
 
 
 
