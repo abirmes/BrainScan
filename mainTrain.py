@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-
+from keras.models import Sequential
+from keras.layers import Conv2D , MaxPooling2D, Activation , Dropout, Flatten , Dense
 
 image_directory = 'Data/'
 folders = {
@@ -103,29 +104,21 @@ for class_label in classes:
     class_indices = np.where(label == class_label)[0]
     class_images = dataset[class_indices]
     current_count = len(class_images)
-    
     # Calculer combien d'images à générer
     images_to_generate = max_count - current_count
     if images_to_generate > 0:
         generated = 0
         while generated < images_to_generate:
-            # Choisir une image au hasard dans cette classe
-            random_image = class_images[np.random.randint(0, len(class_images))]
-            
-            # Ajouter une dimension batch (le générateur attend format (batch, height, width, channels))
-            random_image = np.expand_dims(random_image, axis=0)
-            
-            # Générer une image augmentée
-            augmented_image = train_datagen.random_transform(random_image[0])
-            
-            # Ajouter au dataset augmenté
-            augmented_dataset.append(augmented_image)
+            random_image = class_images[np.random.randint(0, len(class_images))] # Choisir une image au hasard dans cette classe
+            random_image = np.expand_dims(random_image, axis=0) # Ajouter une dimension batch (le générateur attend format (batch, height, width, channels))
+            augmented_image = train_datagen.random_transform(random_image[0]) # Générer une image augmentée
+            augmented_dataset.append(augmented_image) # Ajouter au dataset augmenté
             augmented_labels.append(class_label)
             generated += 1
-
 # Convertir en arrays NumPy
 augmented_dataset = np.array(augmented_dataset)
 augmented_labels = np.array(augmented_labels)
+
 
 
 classes, counts = np.unique(augmented_labels, return_counts=True) # compter combien d’images pour chaque classe
@@ -138,19 +131,51 @@ plt.title('Nombre d’images par classe')
 plt.show()
 
 
-x = augmented_dataset/255.0
+x = augmented_dataset/255.0 # normalisation
 y = augmented_labels
 
 from tensorflow.keras.utils import to_categorical
-y = to_categorical(y, num_classes=4)
+y = to_categorical(y, num_classes=4) # to_categorical 
+
 
 
 from sklearn.model_selection import train_test_split
 x_train , x_test , y_train , y_test = train_test_split(x , y , test_size=0.2 , random_state=1)
 
 
+# model building
+
+model = Sequential()
+#couvhe 1
+model.add(Conv2D(32 , (3 ,3) , input_shape = (224 , 224 ,3)))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+# couvhe 2
+model.add(Conv2D(64 , (3 ,3) , activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+#couvhe 3
+model.add(Conv2D(128 , (3 ,3) , activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+# Évite le surapprentissage (overfitting) en désactivant aléatoirement certains neurones
+model.add(Dropout(0.5))
+
+model.add(Flatten()) # Transforme l’image (2D) en un vecteur (1D)
+model.add(Dense(128, activation='relu'))  # Couche cachée
+model.add(Dropout(0.5))
+
+# dense Combine toutes les caractéristiques pour faire une prédiction finale
+model.add(Dense(4, activation='softmax')) # 4 classes
+
+model.summary()
 
 
+model.compile(
+    optimizer='adam', # méthode d’apprentissage
+    loss='categorical_crossentropy', # mesure l’erreur
+    metrics=['accuracy'] # affiche la précision
+)
 
 
 
