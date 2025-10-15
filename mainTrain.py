@@ -28,12 +28,14 @@ for folder_name, folder_label in folders.items():
     for image_name in images:
         ext = image_name.split('.')[-1].lower()
         if ext in ['jpg', 'jpeg', 'bmp', 'png']:
-            image = cv2.imread(image_directory + folder_name + '/' + image_name) # lit l’image depuis le disque en tableau NumPy
-            image = Image.fromarray(image, 'RGB') # convertit ce tableau en objet PIL
-            image = image.resize((224, 224)) # Redimensionner les images à une taille fixe 224×224 à l’aide de la bibliothèque OpenCV.
-            dataset.append(np.array(image)) # retransforme en tableau NumPy pour ML 
-            label.append(folder_label) #Chaque image et son label doivent avoir le même indice dans les deux listes.
-            
+            try:
+                image = cv2.imread(image_directory + folder_name + '/' + image_name) # lit l’image depuis le disque en tableau NumPy
+                image = Image.fromarray(image, 'RGB') # convertit ce tableau en objet PIL
+                image = image.resize((224, 224)) # Redimensionner les images à une taille fixe 224×224 à l’aide de la bibliothèque OpenCV.
+                dataset.append(np.array(image)) # retransforme en tableau NumPy pour ML 
+                label.append(folder_label) #Chaque image et son label doivent avoir le même indice dans les deux listes.
+            except Exception as e:
+                print(f"Erreur lors du traitement de l'image {image_name} dans le dossier {folder_name} : {e}")
 #Une fois toutes les images et leurs labels chargés, convertir les listes images et étiquettes en tableaux NumPy pour les rendre exploitables par le modèle CNN.
 dataset = np.array(dataset)
 label = np.array(label)
