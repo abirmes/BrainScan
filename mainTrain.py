@@ -212,7 +212,7 @@ print("training time: " , training_time)
 
 
 
-# evaluation de modele 
+# evaluation de modele sur l'ensemple de test   
 test_loss, test_acc = model.evaluate(x_test, y_test)
 print("Test Accuracy:", test_acc)
 print("Test Loss:", test_loss)
