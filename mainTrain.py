@@ -241,6 +241,42 @@ plt.show()
 
 
 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import numpy as np
+
+# Prédictions du modèle
+y_pred_probs = model.predict(x_test)
+y_pred = np.argmax(y_pred_probs, axis=1)
+y_true = np.argmax(y_test, axis=1)
+
+# Afficher 4 matrices de confusion binaires (1 par classe)
+for i, class_name in enumerate(class_names):
+    # Binariser les vraies étiquettes et les prédictions pour la classe i
+    y_true_binary = (y_true == i).astype(int)
+    y_pred_binary = (y_pred == i).astype(int)
+    
+    # Calcul matrice de confusion binaire
+    cm = confusion_matrix(y_true_binary, y_pred_binary)
+    
+    # Affichage
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[f'Not {class_name}', class_name])
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title(f'Matrice de Confusion binaire pour la classe "{class_name}"')
+    plt.show()
+
+
+
+
+from sklearn.metrics import classification_report
+import numpy as np
+
+# 1️⃣ Prédire les classes sur le jeu de test
+y_pred = model.predict(x_test)
+y_pred_classes = np.argmax(y_pred, axis=1) # convertir les probabilités en classes
+y_true = np.argmax(y_test, axis=1) # si tes labels sont one-hot encodés
+
+# 2️⃣ Générer le rapport
+print(classification_report(y_true, y_pred_classes, target_names=class_names))
 
 
 
@@ -250,4 +286,28 @@ plt.show()
 
 
 
+
+
+
+
+
+import numpy as np
+correct_indices = np.where(y_pred_classes == y_true)[0]
+incorrect_indices = np.where(y_pred_classes != y_true)[0]
+plt.figure(figsize=(10, 6))
+for i, idx in enumerate(correct_indices[:6]):
+    plt.subplot(2, 3, i+1)
+    plt.imshow(x_test[idx])
+    plt.title(f"Vrai: {class_names[y_true[idx]]} | Prédit: {class_names[y_pred_classes[idx]]}")
+    plt.axis("off")
+plt.suptitle("✅ Exemples de prédictions correctes")
+plt.show()
+plt.figure(figsize=(10, 6))
+for i, idx in enumerate(incorrect_indices[:6]):
+    plt.subplot(2, 3, i+1)
+    plt.imshow(x_test[idx])
+    plt.title(f"Vrai: {class_names[y_true[idx]]} | Prédit: {class_names[y_pred_classes[idx]]}")
+    plt.axis("off")
+plt.suptitle("✅ Exemples de prédictions correctes")
+plt.show()
 
