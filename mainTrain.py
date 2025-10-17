@@ -10,6 +10,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.models import Sequential
 from keras.layers import Conv2D , MaxPooling2D, Activation , Dropout, Flatten , Dense
 from tensorflow.keras.utils import plot_model
+from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 
 
@@ -263,3 +264,21 @@ plt.show()
 
 
 
+# Charger le modèle sauvegardé
+model = load_model('last_model.h5')
+def predict_image(img_path):
+    try:
+        # Charger et prétraiter l'image
+        img = Image.open(img_path).convert('RGB')
+        img = img.resize((224, 224))
+        img_array = np.array(img) / 255.0  # normalisation
+        img_array = np.expand_dims(img_array, axis=0)  # batch dimension
+        # Prédire avec le modèle
+        predictions = model.predict(img_array)
+        predicted_class = np.argmax(predictions[0])
+        confidence = np.max(predictions[0])
+        print(f"Classe prédite : {class_names[predicted_class]} (confiance : {confidence:.2f})")
+        return class_names[predicted_class], confidence
+
+    except Exception as e:
+        print("Erreur lors de la prédiction :", e)

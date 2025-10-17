@@ -86,7 +86,7 @@ st.header("4️⃣ Entraînement du modèle")
 st.write("""
 - **80%** des données utilisées pour l'entraînement, **20%** pour le test.
 - Utilisation de **EarlyStopping** et **ModelCheckpoint**.
-- Entraînement sur **35 epochs**, batch size = 64.
+- Entraînement sur **30 epochs**, batch size = 64.
 """)
 
 col1, col2 = st.columns(2)
