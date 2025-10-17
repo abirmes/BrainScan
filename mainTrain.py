@@ -1,5 +1,6 @@
 import os 
 from PIL import Image
+import pandas as pd
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -261,24 +262,3 @@ for i, idx in enumerate(incorrect_indices[:6]):# Affiche 6 erreurs de prédictio
 plt.suptitle("Exemples de prédictions incorrectes")
 plt.show()
 
-
-
-
-# Charger le modèle sauvegardé
-model = load_model('last_model.h5')
-def predict_image(img_path):
-    try:
-        # Charger et prétraiter l'image
-        img = Image.open(img_path).convert('RGB')
-        img = img.resize((224, 224))
-        img_array = np.array(img) / 255.0  # normalisation
-        img_array = np.expand_dims(img_array, axis=0)  # batch dimension
-        # Prédire avec le modèle
-        predictions = model.predict(img_array)
-        predicted_class = np.argmax(predictions[0])
-        confidence = np.max(predictions[0])
-        print(f"Classe prédite : {class_names[predicted_class]} (confiance : {confidence:.2f})")
-        return class_names[predicted_class], confidence
-
-    except Exception as e:
-        print("Erreur lors de la prédiction :", e)
