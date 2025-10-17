@@ -175,7 +175,7 @@ batch_size = 64# Nombre d’images par lot
 epochs = 35# Nombre total d’époques d’entraînement
 
 early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True) # Arrêt si pas d’amélioration
-checkpoint = ModelCheckpoint('best_model.h5', monitor='val_loss', save_best_only=True, mode='max')# Sauvegarde du meilleur modèle
+checkpoint = ModelCheckpoint('best_model.h5', monitor='val_loss', save_best_only=True, mode='min')# Sauvegarde du meilleur modèle
 
 import time
 start_time = time.time()# Début du chronométrage
@@ -259,3 +259,7 @@ for i, idx in enumerate(incorrect_indices[:6]):# Affiche 6 erreurs de prédictio
     plt.axis("off")
 plt.suptitle("Exemples de prédictions incorrectes")
 plt.show()
+
+
+
+

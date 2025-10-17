@@ -113,8 +113,8 @@ st.header("5️⃣ Évaluation du modèle")
 
 st.write("""
 Les performances finales sur le jeu de test :
-- **Accuracy** ≈ `0.9206249713897705`
-- **Loss** ≈ `0.2861359417438507`
+- **Accuracy** ≈ `0.9200000166893005`
+- **Loss** ≈ `0.2746630609035492`
 
 Les **matrices de confusion** par classe permettent d'évaluer les erreurs de classification.
 """)
