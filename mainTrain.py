@@ -85,229 +85,177 @@ inverse_folders = {v: k for k, v in folders.items()}
 # Classe pituitary: 1757 images
 
 
-#utilisation de data augmentaion
-
-
-
-train_datagen = ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest'
+# utilisation de data augmentation
+train_datagen = ImageDataGenerator( # Crée un générateur d’images avec transformations aléatoires
+    rotation_range=20, # Rotation aléatoire des images jusqu’à 20 degrés
+    width_shift_range=0.2,# Décalage horizontal aléatoire jusqu’à 20% de la largeur
+    height_shift_range=0.2,# Décalage vertical aléatoire jusqu’à 20% de la hauteur
+    shear_range=0.2,# Application d’un cisaillement aléatoire
+    zoom_range=0.2,# Zoom avant/arrière aléatoire jusqu’à 20%
+    horizontal_flip=True,# Inversion horizontale aléatoire (miroir)
+    fill_mode='nearest'# Remplit les pixels manquants avec les valeurs les plus proches
 )
 
 # Calculer le nombre d'images à générer pour chaque classe
-max_count = 2000
+max_count = 2000  # Nombre cible d’images par classe après augmentation
 
-augmented_dataset = list(dataset)
-augmented_labels = list(label)
+augmented_dataset = list(dataset) # Copie initiale du dataset original
+augmented_labels = list(label) # Copie initiale des labels
 
 # Pour chaque classe, générer des images augmentées
-for class_label in classes:
-    # Trouver les images de cette classe
-    class_indices = np.where(label == class_label)[0]
-    class_images = dataset[class_indices]
-    current_count = len(class_images)
-    # Calculer combien d'images à générer
-    images_to_generate = max_count - current_count
-    if images_to_generate > 0:
+for class_label in classes:# Boucle sur chaque classe
+    class_indices = np.where(label == class_label)[0]# Indices des images appartenant à cette classe
+    class_images = dataset[class_indices]# Images de cette classe
+    current_count = len(class_images)# Nombre actuel d’images
+    images_to_generate = max_count - current_count# Nombre d’images manquantes pour atteindre max_count
+    if images_to_generate > 0: # Si la classe a besoin d’augmentation
         generated = 0
-        while generated < images_to_generate:
-            random_image = class_images[np.random.randint(0, len(class_images))] # Choisir une image au hasard dans cette classe
-            random_image = np.expand_dims(random_image, axis=0) # Ajouter une dimension batch (le générateur attend format (batch, height, width, channels))
-            augmented_image = train_datagen.random_transform(random_image[0]) # Générer une image augmentée
-            augmented_dataset.append(augmented_image) # Ajouter au dataset augmenté
-            augmented_labels.append(class_label)
+        while generated < images_to_generate:# Tant qu’on n’a pas généré assez d’images
+            random_image = class_images[np.random.randint(0, len(class_images))]# Choisir une image au hasard
+            random_image = np.expand_dims(random_image, axis=0)# Ajouter une dimension batch
+            augmented_image = train_datagen.random_transform(random_image[0])# Appliquer transformation aléatoire
+            augmented_dataset.append(augmented_image)# Ajouter image augmentée au dataset
+            augmented_labels.append(class_label)# Ajouter le label correspondant
             generated += 1
 # Convertir en arrays NumPy
-augmented_dataset = np.array(augmented_dataset)
-augmented_labels = np.array(augmented_labels)
+augmented_dataset = np.array(augmented_dataset)# Conversion en tableau NumPy
+augmented_labels = np.array(augmented_labels) # Conversion des labels en tableau NumPy
 
+classes, counts = np.unique(augmented_labels, return_counts=True)# Compte du nombre d’images par classe
+class_names = list(folders.keys()) # Noms des classes à afficher
+plt.figure(figsize=(8,5))# Taille du graphique
+plt.bar(class_names, counts, color='skyblue')# Diagramme en barres
+plt.xlabel('Classes')# Légende axe X
+plt.ylabel('Nombre d’images')# Légende axe Y
+plt.title('Nombre d’images par classe')# Titre
+plt.show()# Affichage du graphique
 
+x = augmented_dataset/255.0  # Normalisation des pixels (valeurs entre 0 et 1)
+y = augmented_labels # Copie des labels
 
-classes, counts = np.unique(augmented_labels, return_counts=True) # compter combien d’images pour chaque classe
-class_names = list(folders.keys())
-plt.figure(figsize=(8,5))
-plt.bar(class_names, counts, color='skyblue')
-plt.xlabel('Classes')
-plt.ylabel('Nombre d’images')
-plt.title('Nombre d’images par classe')
-plt.show()
-
-
-x = augmented_dataset/255.0 # normalisation
-y = augmented_labels
-
-y = to_categorical(y, num_classes=4) # to_categorical 
-
-
+y = to_categorical(y, num_classes=4)  # Conversion des labels en one-hot encoding (4 classes)
 
 from sklearn.model_selection import train_test_split
-x_train , x_test , y_train , y_test = train_test_split(x , y , test_size=0.2 , random_state=1)
-
+x_train , x_test , y_train , y_test = train_test_split(x , y , test_size=0.2 , random_state=1)  # Division en train/test
 
 # model building
+model = Sequential()  # Initialisation du modèle séquentiel
 
-model = Sequential()
-#couvhe 1
-model.add(Conv2D(32 , (3 ,3) , input_shape = (224 , 224 ,3))) #Extrait des caractéristiques locales (bords, textures)
-model.add(MaxPooling2D(pool_size=(2,2))) # Réduit la taille de l’image en gardant l’information essentielle
+# couche 1
+model.add(Conv2D(32 , (3 ,3) , input_shape = (224 , 224 ,3))) # Détection de motifs simples (bords, textures)
+model.add(MaxPooling2D(pool_size=(2,2))) # Réduction de la taille de l’image (garde l’essentiel)
 
-# couvhe 2
-model.add(Conv2D(64 , (3 ,3) , activation='relu')) # activation function Rend le modèle non linéaire (il peut apprendre des choses plus complexes)
-model.add(MaxPooling2D(pool_size=(2,2)))
+# couche 2
+model.add(Conv2D(64 , (3 ,3) , activation='relu'))# Plus de filtres → caractéristiques plus complexes
+model.add(MaxPooling2D(pool_size=(2,2)))# Pooling pour réduire la dimension spatiale
 
-#couvhe 3
-model.add(Conv2D(128 , (3 ,3) , activation='relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
+# couche 3
+model.add(Conv2D(128 , (3 ,3) , activation='relu'))# Détection de motifs encore plus complexes
+model.add(MaxPooling2D(pool_size=(2,2))) # Réduction dimensionnelle
 
-# Évite le surapprentissage (overfitting) en désactivant aléatoirement certains neurones
-model.add(Dropout(0.5))
+model.add(Dropout(0.5))# Désactive 50% des neurones pour éviter le surapprentissage
 
-model.add(Flatten()) # Transforme l’image (2D) en un vecteur (1D)
-model.add(Dense(128, activation='relu'))  # Couche cachée
-model.add(Dropout(0.5))
+model.add(Flatten()) # Passage de 2D → 1D
+model.add(Dense(128, activation='relu')) # Couche cachée entièrement connectée
+model.add(Dropout(0.5)) # Dropout supplémentaire pour régulariser
 
-# dense Combine toutes les caractéristiques pour faire une prédiction finale
-model.add(Dense(4, activation='softmax')) # 4 classes
+model.add(Dense(4, activation='softmax'))# Couche de sortie avec 4 classes (probabilités)
 
-optimizer = Adam(learning_rate=0.01)
+optimizer = Adam(learning_rate=0.01) # Optimiseur Adam avec un taux d’apprentissage fixé
 model.compile(
-    optimizer=optimizer, # méthode d’apprentissage
-    loss='categorical_crossentropy', # mesure l’erreur
-    metrics=['accuracy'] # affiche la précision
+    optimizer=optimizer,# Algorithme d’optimisation
+    loss='categorical_crossentropy',# Fonction de perte adaptée à la classification
+    metrics=['accuracy']# Suivi de la précision pendant l’entraînement
 )
 
-model.summary()
-plot_model(model, to_file='cnn_architecture.png', show_shapes=True, show_layer_names=True)
+model.summary() # Affiche la structure du modèle
+plot_model(model, to_file='cnn_architecture.png', show_shapes=True, show_layer_names=True)  # Sauvegarde du schéma
 
+batch_size = 64# Nombre d’images par lot
+epochs = 35# Nombre total d’époques d’entraînement
 
-
-batch_size = 64
-epochs = 35
-
-
-
-
-
-early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-checkpoint = ModelCheckpoint('best_model.h5', monitor='val_loss', save_best_only=True, mode='max')
+early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True) # Arrêt si pas d’amélioration
+checkpoint = ModelCheckpoint('best_model.h5', monitor='val_loss', save_best_only=True, mode='max')# Sauvegarde du meilleur modèle
 
 import time
-start_time = time.time()
+start_time = time.time()# Début du chronométrage
 
-history = model.fit(
+history = model.fit(# Entraînement du modèle
     x_train, y_train,
     epochs=epochs,
     batch_size=batch_size,
     validation_data=(x_test, y_test),
     callbacks=[early_stop , checkpoint]
 )
-end_time = time.time()  # Fin de l'entraînement
-training_time = end_time - start_time
-print("training time: " , training_time)
+end_time = time.time()# Fin du chronométrage
+training_time = end_time - start_time # Calcul de la durée
+print("training time: " , training_time) # Affichage du temps d’entraînement
 
+# évaluation du modèle sur le test set
+test_loss, test_acc = model.evaluate(x_test, y_test)# Évaluation sur données test
+print("Test Accuracy:", test_acc) # Précision sur test
+print("Test Loss:", test_loss) # Perte sur test
 
-
-# evaluation de modele sur l'ensemple de test   
-test_loss, test_acc = model.evaluate(x_test, y_test)
-print("Test Accuracy:", test_acc)
-print("Test Loss:", test_loss)
-
-
-
-#visualisation graphique 
-import matplotlib.pyplot as plt
-
-plt.plot(history.history['accuracy'], label='train acc')
-plt.plot(history.history['val_accuracy'], label='val acc')
+# visualisation graphique
+plt.plot(history.history['accuracy'], label='train acc')# Courbe précision d’entraînement
+plt.plot(history.history['val_accuracy'], label='val acc') # Courbe précision validation
 plt.title('Accuracy au fil des époques')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
 
-plt.plot(history.history['loss'], label='train loss')
-plt.plot(history.history['val_loss'], label='val loss')
+plt.plot(history.history['loss'], label='train loss') # Courbe perte d’entraînement
+plt.plot(history.history['val_loss'], label='val loss') # Courbe perte validation
 plt.title('Loss au fil des époques')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.show()
 
-
-
-
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
 
-# Prédictions du modèle
-y_pred_probs = model.predict(x_test)
-y_pred = np.argmax(y_pred_probs, axis=1)
-y_true = np.argmax(y_test, axis=1)
+y_pred_probs = model.predict(x_test)# Prédictions du modèle (probabilités)
+y_pred = np.argmax(y_pred_probs, axis=1)# Conversion en classes
+y_true = np.argmax(y_test, axis=1)# Conversion des labels one-hot
 
-# Afficher 4 matrices de confusion binaires (1 par classe)
-for i, class_name in enumerate(class_names):
-    # Binariser les vraies étiquettes et les prédictions pour la classe i
-    y_true_binary = (y_true == i).astype(int)
-    y_pred_binary = (y_pred == i).astype(int)
-    
-    # Calcul matrice de confusion binaire
-    cm = confusion_matrix(y_true_binary, y_pred_binary)
-    
-    # Affichage
+for i, class_name in enumerate(class_names):# Boucle sur chaque classe
+    y_true_binary = (y_true == i).astype(int)# Labels binaires (classe vs pas classe)
+    y_pred_binary = (y_pred == i).astype(int) # Prédictions binaires
+    cm = confusion_matrix(y_true_binary, y_pred_binary)# Matrice de confusion binaire
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[f'Not {class_name}', class_name])
     disp.plot(cmap=plt.cm.Blues)
     plt.title(f'Matrice de Confusion binaire pour la classe "{class_name}"')
     plt.show()
 
-
-
-
 from sklearn.metrics import classification_report
 import numpy as np
 
-# 1️⃣ Prédire les classes sur le jeu de test
-y_pred = model.predict(x_test)
-y_pred_classes = np.argmax(y_pred, axis=1) # convertir les probabilités en classes
-y_true = np.argmax(y_test, axis=1) # si tes labels sont one-hot encodés
+y_pred = model.predict(x_test)# Prédictions du modèle
+y_pred_classes = np.argmax(y_pred, axis=1)# Conversion en classes
+y_true = np.argmax(y_test, axis=1)# Vraies classes
 
-# 2️⃣ Générer le rapport
-print(classification_report(y_true, y_pred_classes, target_names=class_names))
-
-
-
-
-
-
-
-
-
-
-
-
-
+print(classification_report(y_true, y_pred_classes, target_names=class_names)) # Rapport complet (precision, recall, F1)
 
 import numpy as np
-correct_indices = np.where(y_pred_classes == y_true)[0]
-incorrect_indices = np.where(y_pred_classes != y_true)[0]
+correct_indices = np.where(y_pred_classes == y_true)[0]# Indices des prédictions correctes
+incorrect_indices = np.where(y_pred_classes != y_true)[0]# Indices des erreurs
+
 plt.figure(figsize=(10, 6))
-for i, idx in enumerate(correct_indices[:6]):
+for i, idx in enumerate(correct_indices[:6]):# Affiche 6 exemples corrects
     plt.subplot(2, 3, i+1)
     plt.imshow(x_test[idx])
     plt.title(f"Vrai: {class_names[y_true[idx]]} | Prédit: {class_names[y_pred_classes[idx]]}")
     plt.axis("off")
-plt.suptitle("✅ Exemples de prédictions correctes")
-plt.show()
-plt.figure(figsize=(10, 6))
-for i, idx in enumerate(incorrect_indices[:6]):
-    plt.subplot(2, 3, i+1)
-    plt.imshow(x_test[idx])
-    plt.title(f"Vrai: {class_names[y_true[idx]]} | Prédit: {class_names[y_pred_classes[idx]]}")
-    plt.axis("off")
-plt.suptitle("✅ Exemples de prédictions correctes")
+plt.suptitle("Exemples de prédictions correctes")
 plt.show()
 
+plt.figure(figsize=(10, 6))
+for i, idx in enumerate(incorrect_indices[:6]):# Affiche 6 erreurs de prédiction
+    plt.subplot(2, 3, i+1)
+    plt.imshow(x_test[idx])
+    plt.title(f"Vrai: {class_names[y_true[idx]]} | Prédit: {class_names[y_pred_classes[idx]]}")
+    plt.axis("off")
+plt.suptitle("Exemples de prédictions incorrectes")
+plt.show()
